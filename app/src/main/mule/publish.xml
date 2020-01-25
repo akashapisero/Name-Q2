@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="abcd_sales_publish_flow" doc:id="5d1e2f24-0641-4dfd-bacc-84b8c0838754" >
+		<http:listener doc:name="Listener" doc:id="f1ccfb98-429e-4956-843b-640caff88c30" config-ref="HTTP_Listener_config" path="/publish" />
+		<file:read doc:name="Read" doc:id="1fc2a5f1-28f8-43c0-92ab-28905c26c7db" config-ref="File_Config" path="C:\Users\1026892\Desktop\assessment\sales\SalesJan2009.csv"/>
+		<try doc:name="Try" doc:id="b7202248-e933-444d-b462-23260f9ac3b7" >
+			<jms:publish doc:name="Publish" doc:id="3a744487-5508-4931-9cd1-28434de1619b" config-ref="JMS_Config" destination="${jms.queue.name}">
+			<jms:message outboundContentType="application/json" outboundEncoding="UTF-8" />
+		</jms:publish>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="5b6f5871-b00a-41d9-bd9d-f57b6fe2ece5" >
+					<logger level="INFO" doc:name="Logger" doc:id="dfcf9a87-036c-48d5-87b6-f256b90d74cb" message="failed to publish"/>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Transform Message" doc:id="b6ba7c56-8883-4b7c-ac79-47fc622f0633">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

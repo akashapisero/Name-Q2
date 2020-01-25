@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="abcd_sales_consume" doc:id="db0efc2c-9496-441b-8d8a-518a813b5d25" >
+		<http:listener doc:name="Listener" doc:id="768fdd2f-ee33-4763-bf8e-e62e6044daa4" config-ref="HTTP_Listener_config" path="/subscribe"/>
+		<jms:consume doc:name="Consume" doc:id="52df1265-1193-4a82-913c-9ef4242efaec" config-ref="JMS_Config" destination="${jms.queue.name}" contentType="application/csv"/>
+		<ee:transform doc:name="CSV to JSON" doc:id="cc1c6923-33cb-4c7f-8760-132144662605">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="57142c07-6503-4bc1-827e-6cd79f7977c7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+using(data=payload filter ((item, index) -> item.Price == "1200" and (item.Country == "United Kingdom" or item.Country == "Canada" or item.Country == "Spain") and item.Payment_Type == "Mastercard"))
+data map ((item, index) -> {
+    Transaction_date: item.Transaction_date as String {format: 'MM/dd/yyyy'},
+    Product: item.Product,
+    Price : item.Price  
+})
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="687a4fdc-0950-4bf3-82f1-532e50d0b257" message="#[payload]"/>
+	
+</flow>
+</mule>
+
